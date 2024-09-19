@@ -144,6 +144,7 @@ const App = () => {
   const [weatherData, setWeatherData] = useState(generateWeatherData(gridSize));
   const [paths, setPaths] = useState([]);
   const canvasRef = useRef(null);
+  const [safeDistance, setSafeDistance] = useState(10);
 
   // Function to find paths
   const findPaths = () => {
@@ -154,9 +155,34 @@ const App = () => {
     const allDirectionPath = astarAllDirections(graph, start, end);
     if (allDirectionPath) {
       setPaths([allDirectionPath]);
+
+      // Calculate safe distance here
+      const nearestCycloneDistance = calculateNearestCycloneDistance(
+        allDirectionPath,
+        weatherData
+      );
+      setSafeDistance(nearestCycloneDistance);
     }
   };
 
+  // Function to calculate the nearest cyclone distance
+  const calculateNearestCycloneDistance = (path, weatherData) => {
+    // Logic to calculate the distance to the nearest cyclone
+    let minDistance = Infinity;
+
+    path.forEach((position) => {
+      const [x, y] = position.split(",").map(Number);
+      if (weatherData[`${x},${y}`].danger) {
+        const distance = 0; // Same position as cyclone
+        if (distance < minDistance) {
+          minDistance = distance;
+        }
+      }
+      // You can add more logic to calculate distance based on the cyclone's radius
+    });
+
+    return minDistance === Infinity ? null : minDistance;
+  };
   // Function to generate random weather data
   const handleGenerateWeather = () => {
     setWeatherData(generateWeatherData(gridSize));

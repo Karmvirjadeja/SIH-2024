@@ -1,7 +1,7 @@
 import React from "react";
 import "./Card.css"; // Ensure you have this file for styling
 
-const Card = () => {
+const Card = ({ safeDistance }) => {
   return (
     <div className="info-card">
       <h2>Trail-Quester Information</h2>
@@ -24,6 +24,9 @@ const Card = () => {
       </p>
       <p>
         Recommended safe distance from a cyclone: <strong>10 km</strong>.
+      </p>
+      <p>
+        Safe distance to nearest cyclone from the path: <strong>10 km</strong>.
       </p>
     </div>
   );
