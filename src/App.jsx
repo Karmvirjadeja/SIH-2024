@@ -4,22 +4,27 @@ import "./App.css";
 // Heuristic function for A* algorithm
 const heuristic = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
-// Custom A* algorithm for diagonal paths
-const astarDiagonal = (graph, start, end) => {
+// Custom A* algorithm for all directions
+const astarAllDirections = (graph, start, end) => {
   const openSet = [];
   openSet.push({ cost: 0, position: start });
   const cameFrom = new Map();
   const gScore = {};
   const fScore = {};
   const infinity = Infinity;
+
   for (const node in graph) {
     gScore[node] = infinity;
     fScore[node] = infinity;
   }
   gScore[start] = 0;
-  fScore[start] = heuristic(start, end);
+  fScore[start] = heuristic(
+    start.split(",").map(Number),
+    end.split(",").map(Number)
+  );
 
   while (openSet.length > 0) {
+    openSet.sort((a, b) => a.cost - b.cost);
     const current = openSet.shift().position;
 
     if (current === end) {
@@ -34,62 +39,51 @@ const astarDiagonal = (graph, start, end) => {
       return path;
     }
 
-    const neighbors = graph[current] || {};
-    for (const neighbor in neighbors) {
+    const neighbors = getAllNeighbors(graph, current);
+    for (const neighbor of neighbors) {
       const tentativeGScore = gScore[current] + graph[current][neighbor].weight;
       if (tentativeGScore < gScore[neighbor]) {
         cameFrom.set(neighbor, current);
         gScore[neighbor] = tentativeGScore;
-        fScore[neighbor] = gScore[neighbor] + heuristic(neighbor, end);
-        openSet.push({ cost: fScore[neighbor], position: neighbor });
+        fScore[neighbor] =
+          gScore[neighbor] +
+          heuristic(
+            neighbor.split(",").map(Number),
+            end.split(",").map(Number)
+          );
+        if (!openSet.some((node) => node.position === neighbor)) {
+          openSet.push({ cost: fScore[neighbor], position: neighbor });
+        }
       }
     }
   }
   return null;
 };
 
-// Custom A* algorithm for horizontal/vertical paths
-const astarStraight = (graph, start, end) => {
-  const openSet = [];
-  openSet.push({ cost: 0, position: start });
-  const cameFrom = new Map();
-  const gScore = {};
-  const fScore = {};
-  const infinity = Infinity;
-  for (const node in graph) {
-    gScore[node] = infinity;
-    fScore[node] = infinity;
-  }
-  gScore[start] = 0;
-  fScore[start] = heuristic(start, end);
+// Function to get all neighbors including diagonals
+const getAllNeighbors = (graph, position) => {
+  const [x, y] = position.split(",").map(Number);
+  const directions = [
+    [-1, 0],
+    [1, 0], // up, down
+    [0, -1],
+    [0, 1], // left, right
+    [-1, -1],
+    [-1, 1], // up-left, up-right
+    [1, -1],
+    [1, 1], // down-left, down-right
+  ];
 
-  while (openSet.length > 0) {
-    const current = openSet.shift().position;
-
-    if (current === end) {
-      const path = [];
-      let temp = current;
-      while (cameFrom.has(temp)) {
-        path.push(temp);
-        temp = cameFrom.get(temp);
-      }
-      path.push(start);
-      path.reverse();
-      return path;
-    }
-
-    const neighbors = graph[current] || {};
-    for (const neighbor in neighbors) {
-      const tentativeGScore = gScore[current] + graph[current][neighbor].weight;
-      if (tentativeGScore < gScore[neighbor]) {
-        cameFrom.set(neighbor, current);
-        gScore[neighbor] = tentativeGScore;
-        fScore[neighbor] = gScore[neighbor] + heuristic(neighbor, end);
-        openSet.push({ cost: fScore[neighbor], position: neighbor });
-      }
+  const neighbors = [];
+  for (const [dx, dy] of directions) {
+    const neighborX = x + dx;
+    const neighborY = y + dy;
+    const neighbor = `${neighborX},${neighborY}`;
+    if (graph[neighbor]) {
+      neighbors.push(neighbor);
     }
   }
-  return null;
+  return neighbors;
 };
 
 // Generate weather data
@@ -100,7 +94,7 @@ const generateWeatherData = (gridSize) => {
       weatherData[`${x},${y}`] = {
         windSpeed: Math.floor(Math.random() * 31),
         waveHeight: Math.random() * 5,
-        danger: Math.random() < 0.33,
+        danger: Math.random() < 0.1, // Reduced probability of danger zones
       };
     }
   }
@@ -108,29 +102,22 @@ const generateWeatherData = (gridSize) => {
 };
 
 // Create graph function with different weight adjustments
-const createGraph = (gridSize, weatherData, isDiagonal) => {
+const createGraph = (gridSize, weatherData) => {
   const graph = {};
   for (let x = 0; x < gridSize; x++) {
     for (let y = 0; y < gridSize; y++) {
       const key = `${x},${y}`;
       graph[key] = {};
-      const directions = isDiagonal
-        ? [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-            [-1, -1],
-            [-1, 1],
-            [1, -1],
-            [1, 1],
-          ]
-        : [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-          ];
+      const directions = [
+        [-1, 0],
+        [1, 0], // up, down
+        [0, -1],
+        [0, 1], // left, right
+        [-1, -1],
+        [-1, 1], // up-left, up-right
+        [1, -1],
+        [1, 1], // down-left, down-right
+      ];
       for (const [dx, dy] of directions) {
         const nx = x + dx;
         const ny = y + dy;
@@ -153,20 +140,21 @@ const App = () => {
   const [paths, setPaths] = useState([]);
   const canvasRef = useRef(null);
 
-  // Function to find multiple paths
-  const findMultiplePaths = () => {
-    const graphDiagonal = createGraph(gridSize, weatherData, true);
-    const graphStraight = createGraph(gridSize, weatherData, false);
+  // Function to find paths
+  const findPaths = () => {
+    const graph = createGraph(gridSize, weatherData);
     const start = "0,0";
     const end = `${gridSize - 1},${gridSize - 1}`;
 
-    const paths = [];
-    const diagonalPath = astarDiagonal(graphDiagonal, start, end);
-    const straightPath = astarStraight(graphStraight, start, end);
-    if (diagonalPath) paths.push(diagonalPath);
-    if (straightPath) paths.push(straightPath);
+    const allDirectionPath = astarAllDirections(graph, start, end);
+    if (allDirectionPath) {
+      setPaths([allDirectionPath]);
+    }
+  };
 
-    setPaths(paths);
+  // Function to generate random weather data
+  const handleGenerateWeather = () => {
+    setWeatherData(generateWeatherData(gridSize));
   };
 
   // Effect to handle drawing on canvas
@@ -179,20 +167,21 @@ const App = () => {
     ctx.fillStyle = "#87CEEB"; // Light Sky Blue
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-    // Draw weather data
+    // Draw weather data (danger zones are marked with red circles)
     Object.keys(weatherData).forEach((key) => {
       const [x, y] = key.split(",").map(Number);
       if (weatherData[key].danger) {
-        ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Semi-transparent red for danger zones
-        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        const centerX = x * cellSize + cellSize / 2;
+        const centerY = y * cellSize + cellSize / 2;
+        ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Semi-transparent red
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, cellSize / 3, 0, 2 * Math.PI);
+        ctx.fill();
       }
     });
 
-    // Draw multiple paths
-    const colors = ["blue", "green"];
+    // Draw paths
+    const colors = ["blue"];
     paths.forEach((path, pathIndex) => {
       ctx.strokeStyle = colors[pathIndex];
       ctx.lineWidth = 5;
@@ -210,7 +199,7 @@ const App = () => {
       ctx.stroke();
     });
 
-    // Draw the start and end markers
+    // Draw start and end markers
     ctx.fillStyle = "green"; // Port
     ctx.beginPath();
     ctx.arc(0.5 * cellSize, 0.5 * cellSize, cellSize / 3, 0, 2 * Math.PI);
@@ -231,7 +220,8 @@ const App = () => {
   return (
     <div className="App">
       <h1>Ship Path Finder</h1>
-      <button onClick={findMultiplePaths}>Find Multiple Paths</button>
+      <button onClick={findPaths}>Find Path</button>
+      <button onClick={handleGenerateWeather}>Generate Random Weather</button>
       <canvas ref={canvasRef} width={600} height={600}></canvas>
     </div>
   );
