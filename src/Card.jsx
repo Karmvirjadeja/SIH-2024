@@ -20,7 +20,7 @@ const Card = ({ safeDistance }) => {
         Each grid square represents an area of <strong>50 km x 50 km</strong>.
       </p>
       <p>
-        Cyclone diameter: <strong>5 km</strong>.
+        Cyclone diameter: <strong>300 km</strong>.
       </p>
       <p>
         Recommended safe distance from a cyclone: <strong>10 km</strong>.
