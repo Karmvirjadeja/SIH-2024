@@ -173,7 +173,7 @@ const App = () => {
       if (weatherData[key].danger) {
         const centerX = x * cellSize + cellSize / 2;
         const centerY = y * cellSize + cellSize / 2;
-        ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Semi-transparent red
+        ctx.fillStyle = "rgba(128, 128, 128, 0.5)"; // Semi-transparent red
         ctx.beginPath();
         ctx.arc(centerX, centerY, cellSize / 3, 0, 2 * Math.PI);
         ctx.fill();
@@ -219,7 +219,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <h1>Ship Path Finder</h1>
+      <h1>Trail-Quester </h1>
       <button onClick={findPaths}>Find Path</button>
       <button onClick={handleGenerateWeather}>Generate Random Weather</button>
       <canvas ref={canvasRef} width={600} height={600}></canvas>
