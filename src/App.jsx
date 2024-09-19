@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
-
+import Card from "./Card";
 // Heuristic function for A* algorithm
 const heuristic = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
@@ -95,6 +95,7 @@ const generateWeatherData = (gridSize) => {
         windSpeed: Math.floor(Math.random() * 31),
         waveHeight: Math.random() * 5,
         danger: Math.random() < 0.1, // Reduced probability of danger zones
+        pirate: Math.random() < 0.05, // Randomly assign pirate zones
       };
     }
   }
@@ -123,7 +124,11 @@ const createGraph = (gridSize, weatherData) => {
         const ny = y + dy;
         if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
           const neighborKey = `${nx},${ny}`;
-          const weight = weatherData[neighborKey].danger ? 10 : 1;
+          const weight = weatherData[neighborKey].danger
+            ? 10
+            : weatherData[neighborKey].pirate
+            ? Infinity
+            : 1;
           graph[key][neighborKey] = {
             weight: dx !== 0 && dy !== 0 ? weight * Math.sqrt(2) : weight,
           };
@@ -167,19 +172,46 @@ const App = () => {
     ctx.fillStyle = "#87CEEB"; // Light Sky Blue
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-    // Draw weather data (danger zones are marked with red circles)
+    // Draw weather data (danger zones are marked with grey circles)
     Object.keys(weatherData).forEach((key) => {
       const [x, y] = key.split(",").map(Number);
       if (weatherData[key].danger) {
         const centerX = x * cellSize + cellSize / 2;
         const centerY = y * cellSize + cellSize / 2;
-        ctx.fillStyle = "rgba(128, 128, 128, 0.5)"; // Semi-transparent red
+        ctx.fillStyle = "rgba(128, 128, 128, 0.5)"; // Semi-transparent grey
         ctx.beginPath();
         ctx.arc(centerX, centerY, cellSize / 3, 0, 2 * Math.PI);
         ctx.fill();
       }
-    });
 
+      // Draw pirate zones
+      if (weatherData[key].pirate) {
+        const centerX = x * cellSize + cellSize / 2;
+        const centerY = y * cellSize + cellSize / 2;
+
+        // Draw red circle for the pirate zone
+        ctx.fillStyle = "rgba(255, 0, 0, 0.5)"; // Semi-transparent red
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, cellSize / 3, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Draw black cross inside the circle
+        ctx.strokeStyle = "black"; // Outline in black
+        ctx.lineWidth = 2;
+
+        // Vertical line of the cross
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - cellSize / 6); // Top point
+        ctx.lineTo(centerX, centerY + cellSize / 6); // Bottom point
+        ctx.stroke();
+
+        // Horizontal line of the cross
+        ctx.beginPath();
+        ctx.moveTo(centerX - cellSize / 6, centerY); // Left point
+        ctx.lineTo(centerX + cellSize / 6, centerY); // Right point
+        ctx.stroke();
+      }
+    });
     // Draw paths
     const colors = ["blue"];
     paths.forEach((path, pathIndex) => {
@@ -220,6 +252,8 @@ const App = () => {
   return (
     <div className="App">
       <h1>Trail-Quester </h1>
+      <Card />
+
       <button onClick={findPaths}>Find Path</button>
       <button onClick={handleGenerateWeather}>Generate Random Weather</button>
       <canvas ref={canvasRef} width={600} height={600}></canvas>

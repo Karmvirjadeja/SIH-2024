@@ -1,0 +1,56 @@
+.info-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.circle {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.red {
+  background-color: rgba(255, 0, 0, 0.5);
+  position: relative;
+}
+
+.grey {
+  background-color: rgba(128, 128, 128, 0.5);
+}
+
+.pirate-zone {
+  display: inline-block;
+  position: relative;
+}
+
+.cross {
+  position: absolute;
+  top: 50%;
+  left: 35%;
+  transform: translate(-50%, -50%);
+  width: 12px; /* Width of the cross */
+  height: 2px; /* Thickness of the cross */
+  background-color: black;
+  /* Vertical line */
+}
+
+.cross:before,
+.cross:after {
+  content: "";
+  position: absolute;
+  background-color: black;
+  width: 2px; /* Thickness of the cross */
+  height: 12px; /* Height of the cross */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cross:before {
+  transform: translate(-50%, -50%) rotate(90deg); /* Horizontal line */
+}
